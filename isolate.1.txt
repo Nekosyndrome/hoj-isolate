@@ -50,6 +50,11 @@ OPTIONS
 	Limit address space of the program to 'size' kilobytes. If more processes
 	are allowed, this applies to each of them separately.
 
+*--wall-mem=*'size'::
+	Wall memory limit set to 'size' kilobytes. If process exceed this limit,
+	it will be killed by watchdog thread instead of kernel mem limit.
+	This option is set to correctly measure Memory Limit Exceed signal.
+
 *-t, --time=*'time'::
 	Limit run time of the program to 'time' seconds. Fractional numbers are allowed.
 	Time in which the OS assigns the processor to different tasks is not counted.
@@ -277,6 +282,7 @@ of format 'key'*:*'value'. The following keys are defined:
 	* *SG* -- program died on a signal
 	* *TO* -- timed out
 	* *XX* -- internal error of the sandbox
+	* *ML* -- memory limit exceed measured by --wall-mem
 *time*::
 	Run time of the program in fractional seconds.
 *time-wall*::

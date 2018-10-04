@@ -71,6 +71,7 @@ int verbose;
 static int silent;
 static int fsize_limit;
 static int memory_limit;
+static int wall_memory_limit;
 static int stack_limit;
 int block_quota;
 int inode_quota;
@@ -112,6 +113,7 @@ static int status_pipes[2];
 
 static int get_wall_time_ms(void);
 static int get_run_time_ms(struct rusage *rus);
+int get_ppid_vm(int ppid);
 
 /*** Messages and exits ***/
 
@@ -431,6 +433,80 @@ check_timeout(void)
     }
 }
 
+// cur -> box_pid -> ppid
+int getppid(void)
+{
+  if (!box_pid) return 0;
+  char namebuf[256];
+  snprintf(namebuf, sizeof(namebuf), "/proc/%d/task/%d/children", (int) box_pid, (int) box_pid);
+  FILE *f = fopen(namebuf, "r");
+  if (!f) return 0;
+
+  int child;
+  if (fscanf(f, "%d", &child) != 1)
+    {
+      fclose(f);
+      return 0;
+    }
+  if (fscanf(f, "%d", &child) == 1)
+    die("Error parsing %s: unexpected children found", namebuf);
+  fclose(f);
+  return child;
+}
+
+// get memory usage
+int get_ppid_vm(int ppid)
+{
+  static char _ppid_vm_buf[PROC_BUF_SIZE];
+  int c;
+  int fdp = -1;
+
+  snprintf(_ppid_vm_buf, PROC_BUF_SIZE, "/proc/%d/stat", ppid);
+  fdp = open(_ppid_vm_buf, O_RDONLY);
+  if (fdp < 0)
+    return 0;  // This is OK, the process could have finished
+  
+  lseek(fdp, 0, SEEK_SET);
+  if ((c = read(fdp, _ppid_vm_buf, PROC_BUF_SIZE-1)) < 0) {
+    return 0;
+  }
+  if (c >= PROC_BUF_SIZE-1)
+    die("/proc/$pid/stat too long");
+  _ppid_vm_buf[c] = 0;
+  
+  int res = 0;
+  char *x = _ppid_vm_buf;
+  while (*x && *x != ' ')
+    x++;
+  while (*x == ' ')
+    x++;
+  if (*x++ != '(')
+    die("proc stat syntax error 1");
+  while (*x && (*x != ')' || x[1] != ' '))
+    x++;
+  while (*x == ')' || *x == ' ')
+    x++;
+  if (sscanf(x, "%*c %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %d", &res) != 1)
+    die("proc stat syntax error 2");
+  return res/1024;
+}
+
+static void
+check_mle(void)
+{
+  if (!wall_memory_limit) return;
+  static int ppid = 0;
+  if (!ppid && box_pid) {
+    ppid = getppid();
+  }
+  if (!ppid) return;
+  
+  int mem = get_ppid_vm(ppid);
+  if (mem > wall_memory_limit) {
+    err("ML: Memory limit exceeded");
+  }
+}
+
 static void
 box_keeper(void)
 {
@@ -471,6 +547,7 @@ box_keeper(void)
           check_timeout();
           timer_tick = 0;
         }
+      check_mle();
       p = wait4(proxy_pid, &stat, 0, &rus);
       if (p < 0)
         {
@@ -916,6 +993,7 @@ enum opt_code {
   OPT_SHARE_NET,
   OPT_INHERIT_FDS,
   OPT_STDERR_TO_STDOUT,
+  OPT_WALL_MEMORY_LIMIT,
 };
 
 static const char short_opts[] = "b:c:d:DeE:f:i:k:m:M:o:p::q:r:st:vw:x:";
@@ -937,6 +1015,7 @@ static const struct option long_opts[] = {
   { "inherit-fds",        0, NULL, OPT_INHERIT_FDS },
   { "init",                0, NULL, OPT_INIT },
   { "mem",                1, NULL, 'm' },
+  { "wall-mem", 1, NULL, OPT_WALL_MEMORY_LIMIT },
   { "meta",                1, NULL, 'M' },
   { "processes",        2, NULL, 'p' },
   { "quota",                1, NULL, 'q' },
@@ -1084,6 +1163,9 @@ main(int argc, char **argv)
       case OPT_STDERR_TO_STDOUT:
         redir_stderr = NULL;
         redir_stderr_to_stdout = 1;
+        break;
+      case OPT_WALL_MEMORY_LIMIT:
+        wall_memory_limit = opt_uint(optarg);
         break;
       default:
         usage(NULL);
