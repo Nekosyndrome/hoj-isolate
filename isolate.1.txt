@@ -52,6 +52,54 @@ BASIC OPTIONS
 	Output meta-data on the execution of the program to a given file.
 	See below for syntax of the meta-files.
 
+*-m, --mem=*'size'::
+	Limit address space of the program to 'size' kilobytes. If more processes
+	are allowed, this applies to each of them separately.
+
+*--wall-mem=*'size'::
+	Wall memory limit set to 'size' kilobytes. If process exceed this limit,
+	it will be killed by watchdog thread instead of kernel mem limit.
+	This option is set to correctly measure Memory Limit Exceed signal.
+
+*-t, --time=*'time'::
+	Limit run time of the program to 'time' seconds. Fractional numbers are allowed.
+	Time in which the OS assigns the processor to different tasks is not counted.
+
+*-w, --wall-time=*'time'::
+	Limit wall-clock time to 'time' seconds. Fractional values are allowed.
+	This clock measures the time from the start of the program to its exit,
+	so it does not stop when the program has lost the CPU or when it is waiting
+	for an external event. We recommend to use *--time* as the main limit,
+	but set *--wall-time* to a much higher value as a precaution against
+	sleeping programs.
+
+*-x, --extra-time=*'time'::
+	When a time limit is exceeded, wait for extra 'time' seconds before
+	killing the program. This has the advantage that the real execution time
+	is reported, even though it slightly exceeds the limit. Fractional
+	numbers are again allowed.
+
+*-b, --box-id=*'id'::
+	When you run multiple sandboxes in parallel, you have to assign each unique
+	IDs to them by this option. See the discussion on UIDs in the INSTALLATION
+	section. The ID defaults to 0.
+
+*-k, --stack=*'size'::
+	Limit process stack to 'size' kilobytes. By default, the whole address
+	space is available for the stack, but it is subject to the *--mem* limit.
+
+*-f, --fsize=*'size'::
+	Limit size of files created (or modified) by the program to 'size' kilobytes.
+	In most cases, it is better to restrict overall disk usage by a disk quota
+	(see below). This option can help in cases when quotas are not enabled
+	on the underlying filesystem.
+
+*-q, --quota=*'blocks'*,*'inodes'::
+	Set disk quota to a given number of blocks and inodes. This requires the
+	filesystem to be mounted with support for quotas. Please note that this
+	currently works only on the ext family of filesystems (other filesystems
+	use other interfaces for setting quotas).
+
 *-i, --stdin=*'file'::
 	Redirect standard input from 'file'. The 'file' has to be accessible
 	inside the sandbox (which means that the sandboxed program can manipulate
@@ -343,6 +391,7 @@ of format 'key'*:*'value'. The following keys are defined:
 	* *SG* -- program died on a signal
 	* *TO* -- timed out
 	* *XX* -- internal error of the sandbox
+	* *ML* -- memory limit exceed measured by --wall-mem
 *time*::
 	Run time of the program in fractional seconds.
 *time-wall*::
