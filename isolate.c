@@ -1,8 +1,8 @@
 /*
- *	A Process Isolator based on Linux Containers
+ *  A Process Isolator based on Linux Containers
  *
- *	(c) 2012-2018 Martin Mares <mj@ucw.cz>
- *	(c) 2012-2014 Bernard Blackham <bernard@blackham.com.au>
+ *  (c) 2012-2018 Martin Mares <mj@ucw.cz>
+ *  (c) 2012-2014 Bernard Blackham <bernard@blackham.com.au>
  */
 
 #include "isolate.h"
@@ -63,7 +63,7 @@
 
 #define TIMER_INTERVAL_US 100000
 
-static int timeout;			/* milliseconds */
+static int timeout;     /* milliseconds */
 static int wall_timeout;
 static int extra_timeout;
 int pass_environ;
@@ -136,10 +136,10 @@ box_exit(int rc)
   if (proxy_pid > 0)
     {
       if (box_pid > 0)
-	{
-	  kill(-box_pid, SIGKILL);
-	  kill(box_pid, SIGKILL);
-	}
+        {
+          kill(-box_pid, SIGKILL);
+          kill(box_pid, SIGKILL);
+        }
       kill(-proxy_pid, SIGKILL);
       kill(proxy_pid, SIGKILL);
       meta_printf("killed:1\n");
@@ -147,12 +147,12 @@ box_exit(int rc)
       struct rusage rus;
       int p, stat;
       do
-	p = wait4(proxy_pid, &stat, 0, &rus);
+        p = wait4(proxy_pid, &stat, 0, &rus);
       while (p < 0 && errno == EINTR);
       if (p < 0)
-	fprintf(stderr, "UGH: Lost track of the process (%m)\n");
+        fprintf(stderr, "UGH: Lost track of the process (%m)\n");
       else
-	final_stats(&rus);
+        final_stats(&rus);
     }
 
   if (rc < 2 && cleanup_ownership)
@@ -262,18 +262,18 @@ struct signal_rule {
 };
 
 static const struct signal_rule signal_rules[] = {
-  { SIGHUP,	SIGNAL_INTERRUPT },
-  { SIGINT,	SIGNAL_INTERRUPT },
-  { SIGQUIT,	SIGNAL_INTERRUPT },
-  { SIGILL,	SIGNAL_FATAL },
-  { SIGABRT,	SIGNAL_FATAL },
-  { SIGFPE,	SIGNAL_FATAL },
-  { SIGSEGV,	SIGNAL_FATAL },
-  { SIGPIPE,	SIGNAL_IGNORE },
-  { SIGTERM,	SIGNAL_INTERRUPT },
-  { SIGUSR1,	SIGNAL_IGNORE },
-  { SIGUSR2,	SIGNAL_IGNORE },
-  { SIGBUS,	SIGNAL_FATAL },
+  { SIGHUP,  SIGNAL_INTERRUPT },
+  { SIGINT,  SIGNAL_INTERRUPT },
+  { SIGQUIT, SIGNAL_INTERRUPT },
+  { SIGILL,  SIGNAL_FATAL },
+  { SIGABRT, SIGNAL_FATAL },
+  { SIGFPE,  SIGNAL_FATAL },
+  { SIGSEGV, SIGNAL_FATAL },
+  { SIGPIPE, SIGNAL_IGNORE },
+  { SIGTERM, SIGNAL_INTERRUPT },
+  { SIGUSR1, SIGNAL_IGNORE },
+  { SIGUSR2, SIGNAL_IGNORE },
+  { SIGBUS,  SIGNAL_FATAL },
 };
 
 static void
@@ -311,19 +311,19 @@ setup_signals(void)
     {
       const struct signal_rule *sr = &signal_rules[i];
       switch (sr->action)
-	{
-	case SIGNAL_IGNORE:
-	  signal(sr->signum, SIG_IGN);
-	  break;
-	case SIGNAL_INTERRUPT:
-	  sigaction(sr->signum, &sa_int, NULL);
-	  break;
-	case SIGNAL_FATAL:
-	  sigaction(sr->signum, &sa_fatal, NULL);
-	  break;
-	default:
-	  die("Invalid signal rule");
-	}
+        {
+        case SIGNAL_IGNORE:
+          signal(sr->signum, SIG_IGN);
+          break;
+        case SIGNAL_INTERRUPT:
+          sigaction(sr->signum, &sa_int, NULL);
+          break;
+        case SIGNAL_FATAL:
+          sigaction(sr->signum, &sa_fatal, NULL);
+          break;
+        default:
+          die("Invalid signal rule");
+        }
     }
 }
 
@@ -347,7 +347,7 @@ read_proc_file(char *buf, char *name, int *fdp)
       snprintf(buf, PROC_BUF_SIZE, "/proc/%d/%s", (int) box_pid, name);
       *fdp = open(buf, O_RDONLY);
       if (*fdp < 0)
-	return 0;	// This is OK, the process could have finished
+        return 0;  // This is OK, the process could have finished
     }
   lseek(*fdp, 0, SEEK_SET);
   if ((c = read(*fdp, buf, PROC_BUF_SIZE-1)) < 0)
@@ -425,9 +425,9 @@ check_timeout(void)
     {
       int ms = get_run_time_ms(NULL);
       if (verbose > 1)
-	fprintf(stderr, "[time check: %d msec]\n", ms);
+        fprintf(stderr, "[time check: %d msec]\n", ms);
       if (ms > timeout && ms > extra_timeout)
-	err("TO: Time limit exceeded");
+        err("TO: Time limit exceeded");
     }
 }
 
@@ -450,8 +450,8 @@ box_keeper(void)
       sa.sa_handler = signal_alarm;
       sigaction(SIGALRM, &sa, NULL);
       struct itimerval timer = {
-	.it_interval = { .tv_usec = TIMER_INTERVAL_US },
-	.it_value = { .tv_usec = TIMER_INTERVAL_US },
+        .it_interval = { .tv_usec = TIMER_INTERVAL_US },
+        .it_value = { .tv_usec = TIMER_INTERVAL_US },
       };
       setitimer(ITIMER_REAL, &timer, NULL);
     }
@@ -462,72 +462,72 @@ box_keeper(void)
       int stat;
       pid_t p;
       if (interrupt)
-	{
-	  meta_printf("exitsig:%d\n", interrupt);
-	  err("SG: Interrupted");
-	}
+        {
+          meta_printf("exitsig:%d\n", interrupt);
+          err("SG: Interrupted");
+        }
       if (timer_tick)
-	{
-	  check_timeout();
-	  timer_tick = 0;
-	}
+        {
+          check_timeout();
+          timer_tick = 0;
+        }
       p = wait4(proxy_pid, &stat, 0, &rus);
       if (p < 0)
-	{
-	  if (errno == EINTR)
-	    continue;
-	  die("wait4: %m");
-	}
+        {
+          if (errno == EINTR)
+            continue;
+          die("wait4: %m");
+        }
       if (p != proxy_pid)
-	die("wait4: unknown pid %d exited!", p);
+        die("wait4: unknown pid %d exited!", p);
       proxy_pid = 0;
 
       // Check error pipe if there is an internal error passed from inside the box
       char interr[1024];
       int n = read(read_errors_from_fd, interr, sizeof(interr) - 1);
       if (n > 0)
-	{
-	  interr[n] = 0;
-	  die("%s", interr);
-	}
+        {
+          interr[n] = 0;
+          die("%s", interr);
+        }
 
       // Check status pipe if there is an exit status reported by the proxy process
       n = read(status_pipes[0], &stat, sizeof(stat));
       if (n != sizeof(stat))
-	die("Did not receive exit status from proxy");
+        die("Did not receive exit status from proxy");
 
       final_stats(&rus);
       if (timeout && total_ms > timeout)
-	err("TO: Time limit exceeded");
+        err("TO: Time limit exceeded");
       if (wall_timeout && wall_ms > wall_timeout)
-	err("TO: Time limit exceeded (wall clock)");
+        err("TO: Time limit exceeded (wall clock)");
 
       if (WIFEXITED(stat))
-	{
-	  meta_printf("exitcode:%d\n", WEXITSTATUS(stat));
-	  if (WEXITSTATUS(stat))
-	    err("RE: Exited with error status %d", WEXITSTATUS(stat));
-	  flush_line();
-	  if (!silent)
-	    {
-	      fprintf(stderr, "OK (%d.%03d sec real, %d.%03d sec wall)\n",
-		total_ms/1000, total_ms%1000,
-		wall_ms/1000, wall_ms%1000);
-	    }
-	  box_exit(0);
-	}
+        {
+          meta_printf("exitcode:%d\n", WEXITSTATUS(stat));
+          if (WEXITSTATUS(stat))
+            err("RE: Exited with error status %d", WEXITSTATUS(stat));
+          flush_line();
+          if (!silent)
+            {
+              fprintf(stderr, "OK (%d.%03d sec real, %d.%03d sec wall)\n",
+                total_ms/1000, total_ms%1000,
+                wall_ms/1000, wall_ms%1000);
+            }
+          box_exit(0);
+        }
       else if (WIFSIGNALED(stat))
-	{
-	  meta_printf("exitsig:%d\n", WTERMSIG(stat));
-	  err("SG: Caught fatal signal %d", WTERMSIG(stat));
-	}
+        {
+          meta_printf("exitsig:%d\n", WTERMSIG(stat));
+          err("SG: Caught fatal signal %d", WTERMSIG(stat));
+        }
       else if (WIFSTOPPED(stat))
-	{
-	  meta_printf("exitsig:%d\n", WSTOPSIG(stat));
-	  err("SG: Stopped by signal %d", WSTOPSIG(stat));
-	}
+        {
+          meta_printf("exitsig:%d\n", WSTOPSIG(stat));
+          err("SG: Stopped by signal %d", WSTOPSIG(stat));
+        }
       else
-	die("wait4: unknown status %x, giving up!", stat);
+        die("wait4: unknown status %x, giving up!", stat);
     }
 }
 
@@ -578,24 +578,24 @@ setup_fds(void)
     {
       close(0);
       if (open(redir_stdin, O_RDONLY) != 0)
-	die("open(\"%s\"): %m", redir_stdin);
+        die("open(\"%s\"): %m", redir_stdin);
     }
   if (redir_stdout)
     {
       close(1);
       if (open(redir_stdout, O_WRONLY | O_CREAT | O_TRUNC, 0666) != 1)
-	die("open(\"%s\"): %m", redir_stdout);
+        die("open(\"%s\"): %m", redir_stdout);
     }
   if (redir_stderr)
     {
       close(2);
       if (open(redir_stderr, O_WRONLY | O_CREAT | O_TRUNC, 0666) != 2)
-	die("open(\"%s\"): %m", redir_stderr);
+        die("open(\"%s\"): %m", redir_stderr);
     }
   if (redir_stderr_to_stdout)
     {
       if (dup2(1, 2) < 0)
-	die("Cannot dup stdout to stderr: %m");
+        die("Cannot dup stdout to stderr: %m");
     }
 }
 
@@ -676,7 +676,7 @@ box_proxy(void *arg)
     {
       close(status_pipes[1]);
       box_inside(args);
-      _exit(42);	// We should never get here
+      _exit(42);  // We should never get here
     }
 
   setup_orig_credentials();
@@ -813,10 +813,10 @@ run(char **argv)
   setup_signals();
 
   proxy_pid = clone(
-    box_proxy,			// Function to execute as the body of the new process
-    argv,			// Pass our stack
+    box_proxy,  // Function to execute as the body of the new process
+    argv,  // Pass our stack
     SIGCHLD | CLONE_NEWIPC | (share_net ? 0 : CLONE_NEWNET) | CLONE_NEWNS | CLONE_NEWPID,
-    argv);			// Pass the arguments
+    argv);  // Pass the arguments
   if (proxy_pid < 0)
     die("Cannot run proxy, clone failed: %m");
   if (!proxy_pid)
@@ -921,38 +921,38 @@ enum opt_code {
 static const char short_opts[] = "b:c:d:DeE:f:i:k:m:M:o:p::q:r:st:vw:x:";
 
 static const struct option long_opts[] = {
-  { "box-id",		1, NULL, 'b' },
-  { "chdir",		1, NULL, 'c' },
-  { "cg",		0, NULL, OPT_CG },
-  { "cg-mem",		1, NULL, OPT_CG_MEM },
-  { "cg-timing",	0, NULL, OPT_CG_TIMING },
-  { "cleanup",		0, NULL, OPT_CLEANUP },
-  { "dir",		1, NULL, 'd' },
-  { "no-cg-timing",	0, NULL, OPT_NO_CG_TIMING },
+  { "box-id",                1, NULL, 'b' },
+  { "chdir",                1, NULL, 'c' },
+  { "cg",                0, NULL, OPT_CG },
+  { "cg-mem",                1, NULL, OPT_CG_MEM },
+  { "cg-timing",        0, NULL, OPT_CG_TIMING },
+  { "cleanup",                0, NULL, OPT_CLEANUP },
+  { "dir",                1, NULL, 'd' },
+  { "no-cg-timing",        0, NULL, OPT_NO_CG_TIMING },
   { "no-default-dirs",  0, NULL, 'D' },
-  { "fsize",		1, NULL, 'f' },
-  { "env",		1, NULL, 'E' },
-  { "extra-time",	1, NULL, 'x' },
-  { "full-env",		0, NULL, 'e' },
-  { "inherit-fds",	0, NULL, OPT_INHERIT_FDS },
-  { "init",		0, NULL, OPT_INIT },
-  { "mem",		1, NULL, 'm' },
-  { "meta",		1, NULL, 'M' },
-  { "processes",	2, NULL, 'p' },
-  { "quota",		1, NULL, 'q' },
-  { "run",		0, NULL, OPT_RUN },
-  { "share-net",	0, NULL, OPT_SHARE_NET },
-  { "silent",		0, NULL, 's' },
-  { "stack",		1, NULL, 'k' },
-  { "stderr",		1, NULL, 'r' },
-  { "stderr-to-stdout",	0, NULL, OPT_STDERR_TO_STDOUT },
-  { "stdin",		1, NULL, 'i' },
-  { "stdout",		1, NULL, 'o' },
-  { "time",		1, NULL, 't' },
-  { "verbose",		0, NULL, 'v' },
-  { "version",		0, NULL, OPT_VERSION },
-  { "wall-time",	1, NULL, 'w' },
-  { NULL,		0, NULL, 0 }
+  { "fsize",                1, NULL, 'f' },
+  { "env",                1, NULL, 'E' },
+  { "extra-time",        1, NULL, 'x' },
+  { "full-env",                0, NULL, 'e' },
+  { "inherit-fds",        0, NULL, OPT_INHERIT_FDS },
+  { "init",                0, NULL, OPT_INIT },
+  { "mem",                1, NULL, 'm' },
+  { "meta",                1, NULL, 'M' },
+  { "processes",        2, NULL, 'p' },
+  { "quota",                1, NULL, 'q' },
+  { "run",                0, NULL, OPT_RUN },
+  { "share-net",        0, NULL, OPT_SHARE_NET },
+  { "silent",                0, NULL, 's' },
+  { "stack",                1, NULL, 'k' },
+  { "stderr",                1, NULL, 'r' },
+  { "stderr-to-stdout",        0, NULL, OPT_STDERR_TO_STDOUT },
+  { "stdin",                1, NULL, 'i' },
+  { "stdout",                1, NULL, 'o' },
+  { "time",                1, NULL, 't' },
+  { "verbose",                0, NULL, 'v' },
+  { "version",                0, NULL, OPT_VERSION },
+  { "wall-time",        1, NULL, 'w' },
+  { NULL,                0, NULL, 0 }
 };
 
 static unsigned int
@@ -982,111 +982,111 @@ main(int argc, char **argv)
     switch (c)
       {
       case 'b':
-	box_id = opt_uint(optarg);
-	break;
+        box_id = opt_uint(optarg);
+        break;
       case 'c':
-	set_cwd = optarg;
-	break;
+        set_cwd = optarg;
+        break;
       case OPT_CG:
-	cg_enable = 1;
-	break;
+        cg_enable = 1;
+        break;
       case 'd':
-	if (!set_dir_action(optarg))
-	  usage("Invalid directory rule specified: %s\n", optarg);
-	break;
+        if (!set_dir_action(optarg))
+          usage("Invalid directory rule specified: %s\n", optarg);
+        break;
       case 'D':
         default_dirs = 0;
         break;
       case 'e':
-	pass_environ = 1;
-	break;
+        pass_environ = 1;
+        break;
       case 'E':
-	if (!set_env_action(optarg))
-	  usage("Invalid environment specified: %s\n", optarg);
-	break;
+        if (!set_env_action(optarg))
+          usage("Invalid environment specified: %s\n", optarg);
+        break;
       case 'f':
         fsize_limit = opt_uint(optarg);
         break;
       case 'k':
-	stack_limit = opt_uint(optarg);
-	break;
+        stack_limit = opt_uint(optarg);
+        break;
       case 'i':
-	redir_stdin = optarg;
-	break;
+        redir_stdin = optarg;
+        break;
       case 'm':
-	memory_limit = opt_uint(optarg);
-	break;
+        memory_limit = opt_uint(optarg);
+        break;
       case 'M':
-	meta_open(optarg);
-	break;
+        meta_open(optarg);
+        break;
       case 'o':
-	redir_stdout = optarg;
-	break;
+        redir_stdout = optarg;
+        break;
       case 'p':
-	if (optarg)
-	  max_processes = opt_uint(optarg);
-	else
-	  max_processes = 0;
-	break;
+        if (optarg)
+          max_processes = opt_uint(optarg);
+        else
+          max_processes = 0;
+        break;
       case 'q':
-	sep = strchr(optarg, ',');
-	if (!sep)
-	  usage("Invalid quota specified: %s\n", optarg);
-	block_quota = opt_uint(optarg);
-	inode_quota = opt_uint(sep+1);
-	break;
+        sep = strchr(optarg, ',');
+        if (!sep)
+          usage("Invalid quota specified: %s\n", optarg);
+        block_quota = opt_uint(optarg);
+        inode_quota = opt_uint(sep+1);
+        break;
       case 'r':
-	redir_stderr = optarg;
-	redir_stderr_to_stdout = 0;
-	break;
+        redir_stderr = optarg;
+        redir_stderr_to_stdout = 0;
+        break;
       case 's':
-	silent++;
-	break;
+        silent++;
+        break;
       case 't':
-	timeout = 1000*atof(optarg);
-	break;
+        timeout = 1000*atof(optarg);
+        break;
       case 'v':
-	verbose++;
-	break;
+        verbose++;
+        break;
       case 'w':
-	wall_timeout = 1000*atof(optarg);
-	break;
+        wall_timeout = 1000*atof(optarg);
+        break;
       case 'x':
-	extra_timeout = 1000*atof(optarg);
-	break;
+        extra_timeout = 1000*atof(optarg);
+        break;
       case OPT_INIT:
       case OPT_RUN:
       case OPT_CLEANUP:
       case OPT_VERSION:
-	if (!mode || (int) mode == c)
-	  mode = c;
-	else
-	  usage("Only one command is allowed.\n");
-	break;
+        if (!mode || (int) mode == c)
+          mode = c;
+        else
+          usage("Only one command is allowed.\n");
+        break;
       case OPT_CG_MEM:
-	cg_memory_limit = opt_uint(optarg);
-	require_cg = 1;
-	break;
+        cg_memory_limit = opt_uint(optarg);
+        require_cg = 1;
+        break;
       case OPT_CG_TIMING:
-	cg_timing = 1;
-	require_cg = 1;
-	break;
+        cg_timing = 1;
+        require_cg = 1;
+        break;
       case OPT_NO_CG_TIMING:
-	cg_timing = 0;
-	require_cg = 1;
-	break;
+        cg_timing = 0;
+        require_cg = 1;
+        break;
       case OPT_SHARE_NET:
-	share_net = 1;
-	break;
+        share_net = 1;
+        break;
       case OPT_INHERIT_FDS:
-	inherit_fds = 1;
-	break;
+        inherit_fds = 1;
+        break;
       case OPT_STDERR_TO_STDOUT:
-	redir_stderr = NULL;
-	redir_stderr_to_stdout = 1;
-	break;
+        redir_stderr = NULL;
+        redir_stderr_to_stdout = 1;
+        break;
       default:
-	usage(NULL);
+        usage(NULL);
       }
 
   if (!mode)
@@ -1116,17 +1116,17 @@ main(int argc, char **argv)
     {
     case OPT_INIT:
       if (optind < argc)
-	usage("--init mode takes no parameters\n");
+        usage("--init mode takes no parameters\n");
       init();
       break;
     case OPT_RUN:
       if (optind >= argc)
-	usage("--run mode requires a command to run\n");
+        usage("--run mode requires a command to run\n");
       run(argv+optind);
       break;
     case OPT_CLEANUP:
       if (optind < argc)
-	usage("--cleanup mode takes no parameters\n");
+        usage("--cleanup mode takes no parameters\n");
       cleanup();
       break;
     default:
