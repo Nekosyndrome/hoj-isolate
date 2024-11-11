@@ -1438,6 +1438,7 @@ main(int argc, char **argv)
         break;
       case OPT_AS_GID:
         as_gid = opt_uint(optarg);
+        break;
       case OPT_WALL_MEMORY_LIMIT:
         wall_memory_limit = opt_uint(optarg);
         break;
