@@ -24,8 +24,8 @@ MANDIR = $(DATADIR)/man
 MAN1DIR = $(MANDIR)/man1
 BOXDIR = $(VARPREFIX)/lib/isolate
 
-SYSTEMD_CFLAGS := $(shell pkg-config libsystemd --cflags)
-SYSTEMD_LIBS := $(shell pkg-config libsystemd --libs)
+SYSTEMD_CFLAGS =
+SYSTEMD_LIBS = -lsystemd
 
 isolate: isolate.o util.o rules.o cg.o config.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
